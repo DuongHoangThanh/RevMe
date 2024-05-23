@@ -7,20 +7,23 @@ from RevMeApp.models import User
 from RevMeApp.serializers import UserSerializer
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
 
 @csrf_exempt
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])
 def userApi(request):
     if request.method == "GET":
-        user = User.objects.all()
-        user_serializer = UserSerializer(user, many=True)
+        users = User.objects.all()
+        user_serializer = UserSerializer(users, many=True)
         return JsonResponse(user_serializer.data, safe=False)
 
 @csrf_exempt
 @api_view(['POST'])
 def register(request):
-    if request.method == 'POST':
         data = JSONParser().parse(request)
         user_serializer = UserSerializer(data=data)
         if user_serializer.is_valid():
@@ -40,3 +43,44 @@ def login(request):
             token, created = Token.objects.get_or_create(user=user)
             return JsonResponse({'token': token.key}, status=200)
         return JsonResponse({'error': 'Invalid credentials'}, status=400)
+    
+    
+@csrf_exempt
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+def get_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    user_serializer = UserSerializer(user)
+    return JsonResponse(user_serializer.data, safe=False)
+
+
+@csrf_exempt
+@api_view(['PUT'])
+# @permission_classes([IsAuthenticated])
+def update_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    data = JSONParser().parse(request)
+    user_serializer = UserSerializer(user, data=data, partial=True)  # partial=True để cho phép cập nhật từng phần
+    if user_serializer.is_valid():
+        user_serializer.save()
+        return JsonResponse(user_serializer.data, status=200)
+    return JsonResponse(user_serializer.errors, status=400)
+
+@csrf_exempt
+@api_view(['DELETE'])
+# @permission_classes([IsAuthenticated])
+def delete_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    user.is_active = False
+    user.save()
+    return JsonResponse({'message': 'User deactivated'}, status=200)
+
