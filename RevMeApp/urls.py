@@ -8,5 +8,5 @@ urlpatterns = [
     path('api/user/<int:user_id>/', views.get_user, name='get-user'),
     path('api/user/update/<int:user_id>/', views.update_user, name='update-user'),
     path('api/user/delete/<int:user_id>/', views.delete_user, name='delete-user'),
-    path('api/assessment/', views.create_assessment, name='create-assessment'),
+    path('api/user/goal/', views.predict_bmi, name='predict-bmi'),
 ]
