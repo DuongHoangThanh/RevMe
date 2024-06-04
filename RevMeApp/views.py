@@ -41,10 +41,9 @@ def login(request):
         user = authenticate(username=username, password=password)
         if user is not None:
             token, created = Token.objects.get_or_create(user=user)
-            return JsonResponse({'token': token.key}, status=200)
+            return JsonResponse({"message": "success",'token': token.key}, status=200)
         return JsonResponse({'error': 'Invalid credentials'}, status=400)
-    
-    
+    return JsonResponse({'error': 'Invalid method'}, status=405) 
 @csrf_exempt
 @api_view(['GET'])
 # @permission_classes([IsAuthenticated])
@@ -84,3 +83,20 @@ def delete_user(request, user_id):
     user.save()
     return JsonResponse({'message': 'User deactivated'}, status=200)
 
+
+# assessment
+from rest_framework.parsers import JSONParser
+from rest_framework.response import Response
+from rest_framework import status
+
+from .serializers import AssessmentSerializer
+
+@api_view(['POST'])
+def create_assessment(request):
+    if request.method == 'POST':
+        data = JSONParser().parse(request)
+        serializer = AssessmentSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

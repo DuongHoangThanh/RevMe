@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from RevMeApp.models import User, Goal
+from RevMeApp.models import User, Goal,Assessment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,4 +28,9 @@ class UserSerializer(serializers.ModelSerializer):
 class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
+        fields = '__all__'
+
+class AssessmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assessment
         fields = '__all__'
