@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/user/update/<int:user_id>/', views.update_user, name='update-user'),
     path('api/user/delete/<int:user_id>/', views.delete_user, name='delete-user'),
     path('api/user/goal/', views.predict_bmi, name='predict-bmi'),
+    path('api/user/plan/<int:user_id>/', views.plan_WD, name='plan-WD'),
 ]

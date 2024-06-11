@@ -1,3 +1,5 @@
 Env/
 myenv/
 RevMeApp/.env
+RevMeApp/demo.py
+.env

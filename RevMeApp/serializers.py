@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from RevMeApp.models import User, Goal
+from RevMeApp.models import User, Goal, Assessment
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,6 +25,13 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+
+class AssessmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assessment
+        fields = '__all__'
+
         
 class GoalSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,4 +1,7 @@
 from openai import OpenAI
+
+openai = OpenAI()
+
 import json
 client = OpenAI()
 

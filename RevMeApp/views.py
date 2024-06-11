@@ -12,7 +12,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
-from .models import Goal
+from .models import Goal, Assessment
+from .utils import generate_plan
 import pickle
 import joblib
 # Create your views here.
@@ -96,83 +97,137 @@ def predict_bmi(request):
         # Extract data from the request body (assuming JSON format)
         data = JSONParser().parse(request)
         # Create a Goal object from the received data
-        goal = Goal(
+        assessment = Assessment(
             user_id=data['user_id'],
-            gender=data['gender'],
-            age=data['age'],
-            occupation=data['occupation'],
-            sleep_duration=data['sleep_duration'],
-            quality_of_sleep=data['quality_of_sleep'],
-            physical_activity_level=data['physical_activity_level'],
-            stress_level=data['stress_level'],
-            heart_rate=data['heart_rate'],
-            daily_steps=data['daily_steps'],
-            sleep_disorder=data['sleep_disorder'],
-            systolic=data['systolic'],
-            diastolic=data['diastolic'],
+            gender=data['Gender'],
+            age=data['Age'],
+            height=data['Height'],
+            weight=data['Weight'],
+            CALC=data['CALC'],
+            FAVC=data['FAVC'],
+            FCVC=data['FCVC'],
+            NCP=data['NCP'],
+            SCC=data['SCC'],
+            SMOKE=data['SMOKE'],
+            CH2O=data['CH2O'],
+            family_history_with_overweight=data['family_history_with_overweight'],
+            FAF=data['FAF'],
+            TUE=data['TUE'],
+            CAEC=data['CAEC'],
+            MTRANS=data['MTRANS'],
         )
 
-        model = pickle.load(open("/Users/thanhduonghoang/Desktop/RevMe/RevMeApp/DTC.pkl", "rb"))
-
-        if goal.gender == "Male" :
-            goal.gender = 1
-        elif goal.gender == "Female": 
-            goal.gender = 0
-            
-        if goal.occupation == "Accountant" :
-            goal.occupation = 0
-        elif goal.occupation == "Doctor": 
-            goal.occupation = 1
-        elif goal.occupation == "Engineer":
-            goal.occupation = 2
-        elif goal.occupation == "Lawyer":
-            goal.occupation = 3
-        elif goal.occupation == "Manager":
-            goal.occupation = 4
-        elif goal.occupation == "Nurse":
-            goal.occupation = 5
-        elif goal.occupation == "Sales Representative":
-            goal.occupation = 6
-        elif goal.occupation == "Salesperson":
-            goal.occupation = 7
-        elif goal.occupation == "Scientist":
-            goal.occupation = 8
-        elif goal.occupation == "Software Engineer":
-            goal.occupation = 9
-        elif goal.occupation == "Teacher":
-            goal.occupation = 10
-        else:
-            goal.occupation = 10
+        assessment.save()
         
-        
-        if goal.sleep_disorder == "Insomnia" :
-            goal.sleep_disorder = 0
-        elif goal.sleep_disorder == "NoInfo": 
-            goal.sleep_disorder = 1
-        elif goal.sleep_disorder == "Sleep Apnea":
-            goal.sleep_disorder = 2
-            
-        # Extract features from the Goal object
-        features = [goal.gender, goal.age, goal.occupation, goal.sleep_duration, goal.quality_of_sleep, goal.physical_activity_level, goal.stress_level, goal.heart_rate, goal.daily_steps, goal.sleep_disorder, goal.systolic, goal.diastolic]
+        model = pickle.load(open("/Users/thanhduonghoang/Desktop/RevMe/RevMeApp/RFC.pkl", "rb"))
 
-        # Use the model to predict BMI
-        predicted_bmi = model.predict([features])[0]
+        if assessment.gender == "Male" :
+            assessment.gender = 1
+        elif assessment.gender == "Female": 
+            assessment.gender = 0
+            
+        if assessment.CALC == "Always" :
+            assessment.CALC = 0
+        elif assessment.CALC == "Frequently": 
+            assessment.CALC = 1
+        elif assessment.CALC == "Sometimes":
+            assessment.CALC = 2
+        elif assessment.CALC == "no":
+            assessment.CALC = 3 
+        
+        if assessment.FAVC == "no" :
+            assessment.FAVC = 0
+        elif assessment.FAVC == "yes": 
+            assessment.FAVC = 1
+            
+        if assessment.SCC == "no" :
+            assessment.SCC = 0
+        elif assessment.SCC == "yes": 
+            assessment.SCC = 1
+            
+        if assessment.SMOKE == "no" :
+            assessment.SMOKE = 0
+        elif assessment.SMOKE == "yes": 
+            assessment.SMOKE = 1
+            
+        if assessment.family_history_with_overweight == "no" :
+            assessment.family_history_with_overweight = 0
+        elif assessment.family_history_with_overweight == "yes": 
+            assessment.family_history_with_overweight = 1
+            
+        if assessment.CAEC == "Always" :
+            assessment.CAEC = 0
+        elif assessment.CAEC == "Frequently": 
+            assessment.CAEC = 1
+        elif assessment.CAEC == "Sometimes":
+            assessment.CAEC = 2
+        elif assessment.CAEC == "no":
+            assessment.CAEC = 3    
+        
+        if assessment.MTRANS == "Automobile" :
+            assessment.MTRANS = 0
+        elif assessment.MTRANS == "Bike": 
+            assessment.MTRANS = 1
+        elif assessment.MTRANS == "Public_Transportation":
+            assessment.MTRANS = 2
+        elif assessment.MTRANS == "Walking":
+            assessment.MTRANS = 3
+
+        
+        # Extract features from the Assessment object
+        features = [assessment.gender, assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
+        print(features)
+        # Use the model to predict obesity_lv
+        predicted_obesity_lv = model.predict([features])[0]
 
         # Save the prediction to the database (if needed)
-        goal.bmi_category = predicted_bmi
+        assessment.NObeyesdad = predicted_obesity_lv
         
-        if goal.bmi_category == 0 :
-            goal.bmi_category = "Normal"
-        elif goal.bmi_category == 1 : 
-            goal.bmi_category = "Normal Weight"
-        elif goal.bmi_category == 2 :
-            goal.bmi_category = "Obese"
-        elif goal.bmi_category == 3 :
-            goal.bmi_category = "Overweight"
-            
-        goal.save()
+        if predicted_obesity_lv == 0:
+            assessment.NObeyesdad = "Insufficient Weight"
+        elif predicted_obesity_lv == 1:
+            assessment.NObeyesdad = "Normal Weight"
+        elif predicted_obesity_lv == 2:
+            assessment.NObeyesdad = "Obesity Level I"
+        elif predicted_obesity_lv == 3:
+            assessment.NObeyesdad = "Obesity Level II"
+        elif predicted_obesity_lv == 4:
+            assessment.NObeyesdad = "Overweight Type I"
+        elif predicted_obesity_lv == 5:
+            assessment.NObeyesdad = "Overweight Type II"
+        elif predicted_obesity_lv == 6:
+            assessment.NObeyesdad = "Overweight Type III"
+        
+        # Update assessment.NObeyesdad in the database
+        assessment.save()
 
         # Return the prediction to the Android app
-        return JsonResponse({'predicted_bmi': goal.bmi_category}, status=200)
+        return JsonResponse({'obesity_lv': assessment.NObeyesdad, }, status=200)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])
+def get_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    user_serializer = UserSerializer(user)
+    return JsonResponse(user_serializer.data, safe=False)
+    
+@csrf_exempt
+@api_view(['GET'])
+def plan_WD(request, user_id):
+    try:
+        goal_data = Goal.objects.filter(user_id=user_id).values()
+    except Goal.DoesNotExist:
+        return JsonResponse({'error': 'Goal not found'}, status=404)
+    
+    goal_data = list(goal_data) # convert QuerySet -> list of dictionaries
+    plan = generate_plan(goal_data) # Call func generate_plan get plan workout and diet
+
+    # Return data JSON format 
+    return JsonResponse(plan, safe=False)
