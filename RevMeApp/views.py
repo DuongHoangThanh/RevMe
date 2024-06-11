@@ -175,7 +175,7 @@ def predict_bmi(request):
 
         
         # Extract features from the Assessment object
-        features = [assessment.gender, assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
+        features = [assessment.gender,assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
         print(features)
         # Use the model to predict obesity_lv
         predicted_obesity_lv = model.predict([features])[0]
@@ -185,24 +185,32 @@ def predict_bmi(request):
         
         if predicted_obesity_lv == 0:
             assessment.NObeyesdad = "Insufficient Weight"
+            advice = "You are underweight. Ensure you are eating enough nutritious food and consult a doctor or nutritionist for a proper diet plan."
         elif predicted_obesity_lv == 1:
             assessment.NObeyesdad = "Normal Weight"
+            advice = "You have a normal weight. Maintain a healthy lifestyle by continuing to eat a balanced diet and exercise regularly."
         elif predicted_obesity_lv == 2:
             assessment.NObeyesdad = "Obesity Level I"
+            advice = "You are at Obesity Level I. Consider lifestyle changes such as increasing physical activity and reducing calorie intake. Consult a doctor or nutritionist for a safe weight loss plan."
         elif predicted_obesity_lv == 3:
             assessment.NObeyesdad = "Obesity Level II"
+            advice = "You are at Obesity Level II. Weight loss is important for your health. Seek support from healthcare professionals to develop an effective and safe weight loss plan."
         elif predicted_obesity_lv == 4:
             assessment.NObeyesdad = "Overweight Type I"
+            advice = "You are at Overweight Type I. Start by improving your diet and increasing physical activity. Small lifestyle changes can lead to positive results."
         elif predicted_obesity_lv == 5:
             assessment.NObeyesdad = "Overweight Type II"
+            advice = "You are at Overweight Type II. Consider changing your diet and engaging in regular physical activity. Consulting a nutritionist can help you achieve your health goals."
         elif predicted_obesity_lv == 6:
             assessment.NObeyesdad = "Overweight Type III"
+            advice = "You are at Overweight Type III. Lifestyle changes are necessary to improve your health. Focus on eating healthy and being physically active. Support from healthcare professionals can help you develop a safe and effective weight loss plan."
+
         
         # Update assessment.NObeyesdad in the database
         assessment.save()
 
         # Return the prediction to the Android app
-        return JsonResponse({'obesity_lv': assessment.NObeyesdad, }, status=200)
+        return JsonResponse({'obesity_lv': assessment.NObeyesdad, "advice": advice }, status=200)
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
