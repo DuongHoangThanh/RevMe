@@ -168,10 +168,12 @@ def predict_bmi(request):
             assessment.MTRANS = 0
         elif assessment.MTRANS == "Bike": 
             assessment.MTRANS = 1
-        elif assessment.MTRANS == "Public_Transportation":
+        elif assessment.MTRANS == "Motorbike":
             assessment.MTRANS = 2
-        elif assessment.MTRANS == "Walking":
+        elif assessment.MTRANS == "Public_Transportation":
             assessment.MTRANS = 3
+        elif assessment.MTRANS == "Walking":
+            assessment.MTRANS = 4
 
         
         # Extract features from the Assessment object
