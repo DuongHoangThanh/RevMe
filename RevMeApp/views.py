@@ -1,104 +1,42 @@
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from django.contrib.auth import authenticate
-from RevMeApp.models import User,Goal   
-from RevMeApp.serializers import UserSerializer
-from rest_framework.authtoken.models import Token
+from RevMeApp.models import Goal
+from rest_framework.views import APIView   
 from rest_framework.decorators import api_view
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
 from .models import Goal, Assessment
+from .serializers import AssessmentSerializer, GoalSerializer
 from .utils import generate_plan
 import pickle
-import joblib
-# Create your views here.
 
-@csrf_exempt
-@api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-def userApi(request):
-    if request.method == "GET":
-        users = User.objects.all()
-        user_serializer = UserSerializer(users, many=True)
-        return JsonResponse(user_serializer.data, safe=False)
+class AssessmentsList(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        assessments = Assessment.objects.filter(user_id=request.user.id)
+        serializer = AssessmentSerializer(assessments, many=True)
+        return JsonResponse(serializer.data, safe=False)
 
-@csrf_exempt
-@api_view(['POST'])
-def register(request):
-        data = JSONParser().parse(request)
-        user_serializer = UserSerializer(data=data)
-        if user_serializer.is_valid():
-            user_serializer.save()
-            return JsonResponse(user_serializer.data, status=201)
-        return JsonResponse(user_serializer.errors, status=400)
-
-@csrf_exempt
-@api_view(['POST'])
-def login(request):
-    if request.method == 'POST':
-        data = JSONParser().parse(request)
-        username = data.get('username')
-        password = data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            token, created = Token.objects.get_or_create(user=user)
-            return JsonResponse({"message": "success",'token': token.key}, status=200)
-        return JsonResponse({'error': 'Invalid credentials'}, status=400)
-    return JsonResponse({'error': 'Invalid method'}, status=405) 
-@csrf_exempt
-@api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-def get_user(request, user_id):
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-    user_serializer = UserSerializer(user)
-    return JsonResponse(user_serializer.data, safe=False)
-
-
-@csrf_exempt
-@api_view(['PUT'])
-# @permission_classes([IsAuthenticated])
-def update_user(request, user_id):
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-    data = JSONParser().parse(request)
-    user_serializer = UserSerializer(user, data=data, partial=True)  # partial=True để cho phép cập nhật từng phần
-    if user_serializer.is_valid():
-        user_serializer.save()
-        return JsonResponse(user_serializer.data, status=200)
-    return JsonResponse(user_serializer.errors, status=400)
-
-@csrf_exempt
-@api_view(['DELETE'])
-# @permission_classes([IsAuthenticated])
-def delete_user(request, user_id):
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-    user.is_active = False
-    user.save()
-    return JsonResponse({'message': 'User deactivated'}, status=200)
+class AssessmentsDetail(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        assessment = Assessment.objects.get(pk=pk, user_id=request.user.id)
+        serializer = AssessmentSerializer(assessment)
+        return JsonResponse(serializer.data, safe=False)
 
 
 
-@csrf_exempt
-def predict_bmi(request):
-    if request.method == 'POST':
+class PredictObesity(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
         # Extract data from the request body (assuming JSON format)
         data = JSONParser().parse(request)
         # Create a Goal object from the received data
         assessment = Assessment(
-            user_id=data['user_id'],
+            user_id=request.user.id,
             gender=data['Gender'],
             age=data['Age'],
             height=data['Height'],
@@ -116,6 +54,8 @@ def predict_bmi(request):
             CAEC=data['CAEC'],
             MTRANS=data['MTRANS'],
         )
+        # print(request.user.id)
+        # print(assessment)
 
         assessment.save()
         
@@ -178,7 +118,7 @@ def predict_bmi(request):
         
         # Extract features from the Assessment object
         features = [assessment.gender,assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
-        print(features)
+        # print(features)
         # Use the model to predict obesity_lv
         predicted_obesity_lv = model.predict([features])[0]
 
@@ -207,27 +147,13 @@ def predict_bmi(request):
             assessment.NObeyesdad = "Overweight Type III"
             advice = "You are at Overweight Type III. Lifestyle changes are necessary to improve your health. Focus on eating healthy and being physically active. Support from healthcare professionals can help you develop a safe and effective weight loss plan."
 
-        
         # Update assessment.NObeyesdad in the database
         assessment.save()
 
         # Return the prediction to the Android app
         return JsonResponse({'obesity_lv': assessment.NObeyesdad, "advice": advice }, status=200)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-@csrf_exempt
-@api_view(['GET'])
-# @permission_classes([IsAuthenticated])
-def get_user(request, user_id):
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'User not found'}, status=404)
-    user_serializer = UserSerializer(user)
-    return JsonResponse(user_serializer.data, safe=False)
-    
 @csrf_exempt
 @api_view(['GET'])
 def plan_WD(request, user_id):
