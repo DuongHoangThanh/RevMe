@@ -9,8 +9,24 @@ from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
 from .models import Goal, Assessment
+from .serializers import AssessmentSerializer, GoalSerializer
 from .utils import generate_plan
 import pickle
+
+class AssessmentsList(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        assessments = Assessment.objects.filter(user_id=request.user.id)
+        serializer = AssessmentSerializer(assessments, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+class AssessmentsDetail(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        assessment = Assessment.objects.get(pk=pk, user_id=request.user.id)
+        serializer = AssessmentSerializer(assessment)
+        return JsonResponse(serializer.data, safe=False)
+
 
 
 class PredictObesity(APIView):
