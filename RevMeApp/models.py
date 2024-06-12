@@ -5,22 +5,9 @@ from django.contrib.auth.models import AbstractUser
 # Create your models here.
 
 class User(AbstractUser):
-    # GENDER_CHOICES = [
-    #     ('M', 'Male'),
-    #     ('F', 'Female'),
-    #     ('O', 'Other'),
-    # ]
-
-    # age = models.PositiveIntegerField()
     phone = models.CharField(max_length=15, blank=True, null=True)
-    # height = models.FloatField()
-    # weight = models.FloatField()
-    # intensity_level = models.IntegerField()
-    # sleep_quality = models.IntegerField()
-    # gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
-    # avatar = models.CharField
     def __str__(self):
-        return f"{self.get_gender_display()} - Age: {self.age}"
+        return f"{self.username}, {self.email}, {self.phone}"
 
 class Assessment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_ass") # nó tự thêm _id vào sau user

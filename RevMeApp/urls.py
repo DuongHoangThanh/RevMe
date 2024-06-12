@@ -1,13 +1,9 @@
 from django.urls import path
-from . import views
+from .views import PredictObesity, plan_WD, AssessmentsList, AssessmentsDetail
 
 urlpatterns = [
-    path('api/user/', views.userApi, name='user-list'),
-    path('api/register/', views.register, name='register'),
-    path('api/login/', views.login, name='login'),
-    path('api/user/<int:user_id>/', views.get_user, name='get-user'),
-    path('api/user/update/<int:user_id>/', views.update_user, name='update-user'),
-    path('api/user/delete/<int:user_id>/', views.delete_user, name='delete-user'),
-    path('api/user/goal/', views.predict_bmi, name='predict-bmi'),
-    path('api/user/plan/<int:user_id>/', views.plan_WD, name='plan-WD'),
+    path('assessment/', AssessmentsList.as_view(), name='assessment-list'),
+    path('assessment/<int:pk>/', AssessmentsDetail.as_view(), name='assessment-detail'),
+    path('predict/', PredictObesity.as_view(), name='predict-obesity'),
+    path('plan/<int:user_id>/', plan_WD, name='plan-wd'),
 ]

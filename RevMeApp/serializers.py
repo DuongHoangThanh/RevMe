@@ -14,13 +14,7 @@ class UserSerializer(serializers.ModelSerializer):
         user = User(
             email=validated_data['email'],
             username=validated_data['username'],
-            # age=validated_data['age'],
             phone=validated_data['phone'],
-            # height=validated_data['height'],
-            # weight=validated_data['weight'],
-            # intensity_level=validated_data['intensity_level'],
-            # sleep_quality=validated_data['sleep_quality'],
-            # gender=validated_data['gender']
         )
         user.set_password(validated_data['password'])
         user.save()
