@@ -1,5 +1,4 @@
 from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import render
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 from RevMeApp.models import Goal
@@ -7,14 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
-
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
 from .models import Goal, Assessment
 from .utils import generate_plan
 import pickle
-
-
 
 
 class PredictObesity(APIView):
@@ -42,6 +38,8 @@ class PredictObesity(APIView):
             CAEC=data['CAEC'],
             MTRANS=data['MTRANS'],
         )
+        # print(request.user.id)
+        # print(assessment)
 
         assessment.save()
         
@@ -104,7 +102,7 @@ class PredictObesity(APIView):
         
         # Extract features from the Assessment object
         features = [assessment.gender,assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
-        print(features)
+        # print(features)
         # Use the model to predict obesity_lv
         predicted_obesity_lv = model.predict([features])[0]
 
@@ -133,7 +131,6 @@ class PredictObesity(APIView):
             assessment.NObeyesdad = "Overweight Type III"
             advice = "You are at Overweight Type III. Lifestyle changes are necessary to improve your health. Focus on eating healthy and being physically active. Support from healthcare professionals can help you develop a safe and effective weight loss plan."
 
-        
         # Update assessment.NObeyesdad in the database
         assessment.save()
 
