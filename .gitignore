@@ -5,3 +5,12 @@ RevMeApp/demo.py
 RevMeApp/__pycache__/
 RevMe/__pycache__/
 .env
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+*.pot
+*.po
+*.mo
+*.egg
+*.egg-info
