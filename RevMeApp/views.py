@@ -27,8 +27,6 @@ class AssessmentsDetail(APIView):
         serializer = AssessmentSerializer(assessment)
         return JsonResponse(serializer.data, safe=False)
 
-
-
 class PredictObesity(APIView):
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -62,62 +60,62 @@ class PredictObesity(APIView):
         model = pickle.load(open("/Users/thanhduonghoang/Desktop/RevMe/RevMeApp/RFC.pkl", "rb"))
 
         if assessment.gender == "Male" :
-            assessment.gender = 1
+            gender = 1
         elif assessment.gender == "Female": 
-            assessment.gender = 0
-            
+            gender = 0
+
         if assessment.CALC == "Always" :
-            assessment.CALC = 0
+            CALC = 0
         elif assessment.CALC == "Frequently": 
-            assessment.CALC = 1
+            CALC = 1
         elif assessment.CALC == "Sometimes":
-            assessment.CALC = 2
+            CALC = 2
         elif assessment.CALC == "no":
-            assessment.CALC = 3 
+            CALC = 3 
         
         if assessment.FAVC == "no" :
-            assessment.FAVC = 0
+            FAVC = 0
         elif assessment.FAVC == "yes": 
-            assessment.FAVC = 1
+            FAVC = 1
             
         if assessment.SCC == "no" :
-            assessment.SCC = 0
+            SCC = 0
         elif assessment.SCC == "yes": 
-            assessment.SCC = 1
+            SCC = 1
             
         if assessment.SMOKE == "no" :
-            assessment.SMOKE = 0
+            SMOKE = 0
         elif assessment.SMOKE == "yes": 
-            assessment.SMOKE = 1
+            SMOKE = 1
             
         if assessment.family_history_with_overweight == "no" :
-            assessment.family_history_with_overweight = 0
+            family_history_with_overweight = 0
         elif assessment.family_history_with_overweight == "yes": 
-            assessment.family_history_with_overweight = 1
+            family_history_with_overweight = 1
             
         if assessment.CAEC == "Always" :
-            assessment.CAEC = 0
+            CAEC = 0
         elif assessment.CAEC == "Frequently": 
-            assessment.CAEC = 1
+            CAEC = 1
         elif assessment.CAEC == "Sometimes":
-            assessment.CAEC = 2
+            CAEC = 2
         elif assessment.CAEC == "no":
-            assessment.CAEC = 3    
+            CAEC = 3    
         
         if assessment.MTRANS == "Automobile" :
-            assessment.MTRANS = 0
+            MTRANS = 0
         elif assessment.MTRANS == "Bike": 
-            assessment.MTRANS = 1
+            MTRANS = 1
         elif assessment.MTRANS == "Motorbike":
-            assessment.MTRANS = 2
+            MTRANS = 2
         elif assessment.MTRANS == "Public_Transportation":
-            assessment.MTRANS = 3
+            MTRANS = 3
         elif assessment.MTRANS == "Walking":
-            assessment.MTRANS = 4
+            MTRANS = 4
 
         
         # Extract features from the Assessment object
-        features = [assessment.gender,assessment.age, assessment.height, assessment.weight, assessment.CALC, assessment.FAVC, assessment.FCVC, assessment.NCP, assessment.SCC, assessment.SMOKE, assessment.CH2O, assessment.family_history_with_overweight, assessment.FAF, assessment.TUE, assessment.CAEC, assessment.MTRANS]
+        features = [gender, assessment.age, assessment.height, assessment.weight, CALC, FAVC, assessment.FCVC, assessment.NCP, SCC, SMOKE, assessment.CH2O, family_history_with_overweight, assessment.FAF, assessment.TUE, CAEC, MTRANS]
         # print(features)
         # Use the model to predict obesity_lv
         predicted_obesity_lv = model.predict([features])[0]
