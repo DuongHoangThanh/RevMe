@@ -2,4 +2,6 @@ Env/
 myenv/
 RevMeApp/.env
 RevMeApp/demo.py
+RevMeApp/__pycache__/
+RevMe/__pycache__/
 .env
