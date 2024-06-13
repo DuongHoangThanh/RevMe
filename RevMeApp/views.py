@@ -12,6 +12,8 @@ from .models import Goal, Assessment
 from .serializers import AssessmentSerializer, GoalSerializer
 from .utils import generate_plan
 import pickle
+import os
+from dotenv import load_dotenv
 
 class AssessmentsList(APIView):
     permission_classes = [IsAuthenticated]
@@ -56,8 +58,9 @@ class PredictObesity(APIView):
         # print(assessment)
 
         assessment.save()
-        
-        model = pickle.load(open("/Users/thanhduonghoang/Desktop/RevMe/RevMeApp/RFC.pkl", "rb"))
+        load_dotenv()  # take environment variables from .env.
+        path_pkl = os.getenv("Path_model_ML")
+        model = pickle.load(open(path_pkl, "rb"))
 
         if assessment.gender == "Male" :
             gender = 1
