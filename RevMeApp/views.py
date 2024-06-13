@@ -116,7 +116,6 @@ class PredictObesity(APIView):
         elif assessment.MTRANS == "Walking":
             MTRANS = 4
 
-        
         # Extract features from the Assessment object
         features = [gender, assessment.age, assessment.height, assessment.weight, CALC, FAVC, assessment.FCVC, assessment.NCP, SCC, SMOKE, assessment.CH2O, family_history_with_overweight, assessment.FAF, assessment.TUE, CAEC, MTRANS]
         # print(features)
@@ -125,7 +124,7 @@ class PredictObesity(APIView):
 
         # Save the prediction to the database (if needed)
         assessment.NObeyesdad = predicted_obesity_lv
-        
+
         if predicted_obesity_lv == 0:
             assessment.NObeyesdad = "Insufficient Weight"
             advice = "You are underweight. Ensure you are eating enough nutritious food and consult a doctor or nutritionist for a proper diet plan."
@@ -154,6 +153,25 @@ class PredictObesity(APIView):
         # Return the prediction to the Android app
         return JsonResponse({'obesity_lv': assessment.NObeyesdad, "advice": advice }, status=200)
 
+class GoalsList(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        goals = Goal.objects.filter(user_id=request.user.id)
+        serializer = GoalSerializer(goals, many=True)
+        return JsonResponse(serializer.data, safe=False)
+    
+    def post(self, request):
+        data = JSONParser().parse(request)
+        serializer = GoalSerializer(data=data)
+        if serializer.is_valid():
+            if Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).exists():
+                return JsonResponse({'error': 'Goal with the same name already exists', 'status': 'already'}, status=400)
+            serializer.save(user_id=request.user.id)
+            goal_data = Goal.objects.filter(user_id=request.user.id).values()
+            plan = generate_plan(list(goal_data))
+            return JsonResponse(plan, status=201)
+        return JsonResponse(serializer.errors, status=400)
+    
 
 @csrf_exempt
 @api_view(['GET'])
