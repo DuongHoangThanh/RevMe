@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from RevMeApp.models import User, Goal, Assessment
+from RevMeApp.models import User, Goal, Assessment, Plan, WorkoutPlan, MealPlan, Exercise, Meal, Progress
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -31,4 +31,37 @@ class GoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Goal
         fields = '__all__'
+        
+class ExerciseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Exercise
+        fields = '__all__'
 
+class MealSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Meal
+        fields = '__all__'
+        
+class WorkoutPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkoutPlan
+        fields = '__all__'
+
+class MealPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MealPlan
+        fields = '__all__'
+
+class ProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Progress
+        fields = '__all__'
+        
+class PlanSerializer(serializers.ModelSerializer):
+    workouts = WorkoutPlanSerializer(many=True, read_only=True)
+    meals = MealPlanSerializer(many=True, read_only=True)
+    progress = ProgressSerializer(read_only=True)
+
+    class Meta:
+        model = Plan
+        fields = '__all__'
