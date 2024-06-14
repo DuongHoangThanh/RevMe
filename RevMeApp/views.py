@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -8,12 +9,13 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
-from .models import Goal, Assessment
+from .models import Goal, Assessment, Plan, Meal, Exercise, WorkoutPlan, MealPlan, Progress
 from .serializers import AssessmentSerializer, GoalSerializer
 from .utils import generate_plan
 import pickle
 import os
 from dotenv import load_dotenv
+import json
 
 class AssessmentsList(APIView):
     permission_classes = [IsAuthenticated]
@@ -58,7 +60,7 @@ class PredictObesity(APIView):
         # print(assessment)
 
         assessment.save()
-        load_dotenv()  # take environment variables from .env.
+        load_dotenv()
         path_pkl = os.getenv("Path_model_ML")
         model = pickle.load(open(path_pkl, "rb"))
 
@@ -185,36 +187,89 @@ class PredictObesity(APIView):
         # Return the prediction to the Android app
         return JsonResponse({'obesity_lv': assessment.NObeyesdad, "advice": advice , "goal_type": goal_type, "target_weight": target_weight, "duration_weeks": duration_weeks}, status=200)
 
-class GoalsList(APIView):
+class GeneratePlanAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        goals = Goal.objects.filter(user_id=request.user.id)
-        serializer = GoalSerializer(goals, many=True)
-        return JsonResponse(serializer.data, safe=False)
-    
     def post(self, request):
         data = JSONParser().parse(request)
         serializer = GoalSerializer(data=data)
         if serializer.is_valid():
-            if Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).exists():
-                return JsonResponse({'error': 'Goal with the same name already exists', 'status': 'already'}, status=400)
-            serializer.save(user_id=request.user.id)
-            user_data = Assessment.objects.filter(user_id=request.user.id).values()
-            goal_data = Goal.objects.filter(user_id=request.user.id).values()
-            plan = generate_plan(list(goal_data), list(user_data))
+            if not Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).exists():
+                serializer.save(user_id=request.user.id)
+            print("saved")
+            user_data = Assessment.objects.filter(user_id=request.user.id).first()
+            goal_data = Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).first()
+            print("get ass and goal success")
+            plan = generate_plan(goal_data, user_data)
+            print("generate success")
+            print(plan)
+            print(json.dumps(plan, indent=4))
+            # self.save_plan_to_db(request.user, goal_data, plan)
             return JsonResponse(plan, status=201)
         return JsonResponse(serializer.errors, status=400)
     
-@csrf_exempt
-@api_view(['GET'])
-def plan_WD(request, user_id):
-    try:
-        goal_data = Goal.objects.filter(user_id=user_id).values()
-    except Goal.DoesNotExist:
-        return JsonResponse({'error': 'Goal not found'}, status=404)
-    
-    goal_data = list(goal_data) # convert QuerySet -> list of dictionaries
-    plan = generate_plan(goal_data) # Call func generate_plan get plan workout and diet
+    def save_plan_to_db(self, user, goal, plan):
+        for day_plan in plan["plan"]:
+            plan = Plan.objects.create(
+                user = user,
+                goal = goal, 
+                name_day = day_plan["name_day"],
+                description=day_plan["description"],
+                calories_burned_per_day=day_plan["calories_burned_per_day"],
+                calories_intake_per_day=day_plan["calories_intake_per_day"],
+                created_at=timezone.now()
+            )
+            
+            for workout in day_plan["workout"]:
+                exercise, created = Exercise.objects.get_or_create(
+                    name = workout["name"],
+                    defaults = {
+                        "description": workout.get("description", ""),
+                        "image_url": workout.get("image_url", ""),
+                        "video_url": workout.get("video_url", ""),
+                        "reps": workout["reps"],
+                        "sets": workout["sets"],
+                        "duration_minutes": workout["duration_minutes"],
+                        "calories": workout["calories"],
+                        "created_at": timezone.now()
+                    }
+                )
+                WorkoutPlan.objects.create(
+                    plan = plan,
+                    exercise = exercise,
+                    note = "Generated by RevMe AI",
+                    status = False,
+                    update_at = timezone.now()
+                )
+                
+            for meal in day_plan["meal"]:
+                meal_obj, created = Meal.objects.get_or_create(
+                    name = meal["name"],
+                    defaults = {
+                        "description": meal.get("description", ""),
+                        "image_url": meal.get("image_url", ""),
+                        "calories": meal["calories"],
+                        "protein": meal["protein"],
+                        "carbs": meal["carbs"],
+                        "fat": meal["fat"],
+                        "created_at": timezone.now()
+                    }
+                )
+                MealPlan.objects.create(
+                    plan = plan,
+                    meal = meal_obj,
+                    status = False,
+                    note = "Generated by RevMe AI",
+                    created_at = timezone.now()
+                )
+            
+            Progress.objects.create(
+                plan = plan,
+                completed_workouts=0,
+                completed_meals=0,
+                total_calories_burned=0.0,
+                total_calories_intake=0.0,
+                total_water_intake=0.0,
+                notes="Initial progress",
+                update_at=timezone.now()
+            )
 
-    # Return data JSON format 
-    return JsonResponse(plan, safe=False)
