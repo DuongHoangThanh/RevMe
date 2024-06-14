@@ -3,13 +3,11 @@ import json
 from dotenv import load_dotenv
 import os
 
-def generate_plan(goal_data):
-    # construct the prompt
+def generate_plan(goal_data, user_data):
     prompt = f"Generate a workout and diet plan based on the following goal data: {json.dumps(goal_data)}, returns JSON format"
 
-    load_dotenv()  # take environment variables from .env.
+    load_dotenv()
     openai.api_key = os.getenv("OPENAI_API_KEY")
-    # Send the prompt to the model
     response = openai.ChatCompletion.create(
       model="gpt-3.5-turbo",
       messages=[

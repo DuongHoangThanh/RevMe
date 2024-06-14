@@ -128,56 +128,56 @@ class PredictObesity(APIView):
         if predicted_obesity_lv == 0:
             assessment.NObeyesdad = "Insufficient Weight"
             goal_type = "tăng cân"
-            target_weight = assessment.weight + 5 
+            target_weight = 5
             duration_weeks = 12
             advice = ("You are underweight. Ensure you are eating enough nutritious food and consult a doctor or nutritionist for a proper diet plan. "
                     "Your goal is to gain weight. "
-                    f"Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Target weight: {assessment.weight + target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 1:
             assessment.NObeyesdad = "Normal Weight"
             goal_type = "duy trì"
-            target_weight = assessment.weight
+            target_weight = 0
             duration_weeks = 0
             advice = ("You have a normal weight. Maintain a healthy lifestyle by continuing to eat a balanced diet and exercise regularly. "
                     "Your goal is to maintain your current weight. "
-                    f"Target weight: {target_weight} kg.")
+                    f"Target weight: {assessment.weight} kg.")
         elif predicted_obesity_lv == 2:
             assessment.NObeyesdad = "Obesity Level I"
             goal_type = "giảm cân"
-            target_weight = assessment.weight - 5  
+            target_weight = 5
             duration_weeks = 12 
             advice = ("You are at Obesity Level I. Consider lifestyle changes such as increasing physical activity and reducing calorie intake. "
                     "Consult a doctor or nutritionist for a safe weight loss plan. "
-                    f"Your goal is to lose weight. Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 3:
             assessment.NObeyesdad = "Obesity Level II"
             goal_type = "giảm cân"
-            target_weight = assessment.weight - 10  
+            target_weight = 10
             duration_weeks = 24  
             advice = ("You are at Obesity Level II. Weight loss is important for your health. Seek support from healthcare professionals to develop an effective and safe weight loss plan. "
-                    f"Your goal is to lose weight. Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 4:
             assessment.NObeyesdad = "Obesity Level III"
             goal_type = "giảm cân"
-            target_weight = assessment.weight - 15
+            target_weight = 15
             duration_weeks = 32 
             advice = ("You are at Obesity Level III. Significant weight loss is important for your health. Seek support from healthcare professionals to develop an effective and safe weight loss plan. "
                     "Focus on long-term lifestyle changes, including a healthy diet and regular physical activity. "
-                    f"Your goal is to lose weight. Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 5:
             assessment.NObeyesdad = "Overweight Type I"
             goal_type = "giảm cân"
-            target_weight = assessment.weight - 3  # Example target, adjust as needed
-            duration_weeks = 8  # Example duration, adjust as needed
+            target_weight = 3  
+            duration_weeks = 8  
             advice = ("You are at Overweight Type I. Start by improving your diet and increasing physical activity. Small lifestyle changes can lead to positive results. "
-                    f"Your goal is to lose weight. Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 6:
             assessment.NObeyesdad = "Overweight Type II"
             goal_type = "giảm cân"
-            target_weight = assessment.weight - 7  # Example target, adjust as needed
-            duration_weeks = 16  # Example duration, adjust as needed
+            target_weight = 7
+            duration_weeks = 16  
             advice = ("You are at Overweight Type II. Consider changing your diet and engaging in regular physical activity. Consulting a nutritionist can help you achieve your health goals. "
-                    f"Your goal is to lose weight. Target weight: {target_weight} kg, duration: {duration_weeks} weeks.")
+                    f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
 
         # Update assessment.NObeyesdad in the database
         assessment.save()
@@ -199,8 +199,9 @@ class GoalsList(APIView):
             if Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).exists():
                 return JsonResponse({'error': 'Goal with the same name already exists', 'status': 'already'}, status=400)
             serializer.save(user_id=request.user.id)
+            user_data = Assessment.objects.filter(user_id=request.user.id).values()
             goal_data = Goal.objects.filter(user_id=request.user.id).values()
-            plan = generate_plan(list(goal_data))
+            plan = generate_plan(list(goal_data), list(user_data))
             return JsonResponse(plan, status=201)
         return JsonResponse(serializer.errors, status=400)
     
