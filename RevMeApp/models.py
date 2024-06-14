@@ -33,6 +33,7 @@ class Assessment(models.Model):
     CAEC = models.CharField(max_length=50,null=True, blank=True)
     MTRANS = models.CharField(max_length=100,null=True, blank=True)
     NObeyesdad = models.CharField(max_length=100,null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
         return f"{self.gender}, {self.age}, {self.height}, {self.weight}, {self.NObeyesdad}"
@@ -49,10 +50,59 @@ class Goal(models.Model):
     def __str__(self):
         return f"{self.goal_type}, {self.target_weight_kg}, {self.duration_weeks}"
     
+class Exercise(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True)
+    video_url = models.URLField(null=True, blank=True)
+    reps = models.IntegerField(null=True, blank=True)
+    sets = models.IntegerField(null=True, blank=True)
+    duration_minutes = models.IntegerField(null=True, blank=True)
+    calories = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
+class Meal(models.Model):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    image_url = models.URLField(null=True, blank=True)
+    calories = models.FloatField(null=True, blank=True)
+    protein = models.FloatField(null=True, blank=True)
+    carbs = models.FloatField(null=True, blank=True)
+    fat = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     
+class Plan(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_plan")
+    goal = models.ForeignKey(Goal, on_delete=models.CASCADE, related_name="goal_plan")
+    name_day = models.CharField(max_length=255, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    calories_burned_per_day = models.FloatField(null=True, blank=True)
+    calories_intake_per_day = models.FloatField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+class WorkoutPlan(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_workout")
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name="exercise_workout")
+    note = models.TextField(null=True, blank=True)
+    status = models.BooleanField(default=False)
+    update_at = models.DateTimeField(auto_now_add=True)
+    
+class MealPlan(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_diet")
+    meal = models.ForeignKey(Meal, on_delete=models.CASCADE, related_name="food_diet")
+    status = models.BooleanField(default=False)
+    note = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
-
+class Progress(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name="plan_progress")
+    completed_workouts = models.IntegerField(null=True, blank=True)
+    completed_meals = models.IntegerField(null=True, blank=True)
+    total_calories_burned = models.FloatField(null=True, blank=True)
+    total_calories_intake = models.FloatField(null=True, blank=True)
+    total_water_intake = models.FloatField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    update_at = models.DateTimeField(auto_now_add=True)
 
 
 
