@@ -131,7 +131,7 @@ class PredictObesity(APIView):
 
         if predicted_obesity_lv == 0:
             assessment.NObeyesdad = "Insufficient Weight"
-            goal_type = "tăng cân"
+            goal_type = "Gain weight"
             target_weight = 5
             duration_weeks = 12
             advice = ("You are underweight. Ensure you are eating enough nutritious food and consult a doctor or nutritionist for a proper diet plan. "
@@ -139,7 +139,7 @@ class PredictObesity(APIView):
                     f"Target weight: {assessment.weight + target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 1:
             assessment.NObeyesdad = "Normal Weight"
-            goal_type = "duy trì"
+            goal_type = "Maintain"
             target_weight = 0
             duration_weeks = 0
             advice = ("You have a normal weight. Maintain a healthy lifestyle by continuing to eat a balanced diet and exercise regularly. "
@@ -147,7 +147,7 @@ class PredictObesity(APIView):
                     f"Target weight: {assessment.weight} kg.")
         elif predicted_obesity_lv == 2:
             assessment.NObeyesdad = "Obesity Level I"
-            goal_type = "giảm cân"
+            goal_type = "Lose weight"
             target_weight = 5
             duration_weeks = 12 
             advice = ("You are at Obesity Level I. Consider lifestyle changes such as increasing physical activity and reducing calorie intake. "
@@ -155,14 +155,14 @@ class PredictObesity(APIView):
                     f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 3:
             assessment.NObeyesdad = "Obesity Level II"
-            goal_type = "giảm cân"
+            goal_type = "Lose weight"
             target_weight = 10
             duration_weeks = 24  
             advice = ("You are at Obesity Level II. Weight loss is important for your health. Seek support from healthcare professionals to develop an effective and safe weight loss plan. "
                     f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 4:
             assessment.NObeyesdad = "Obesity Level III"
-            goal_type = "giảm cân"
+            goal_type = "Lose weight"
             target_weight = 15
             duration_weeks = 32 
             advice = ("You are at Obesity Level III. Significant weight loss is important for your health. Seek support from healthcare professionals to develop an effective and safe weight loss plan. "
@@ -170,14 +170,14 @@ class PredictObesity(APIView):
                     f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 5:
             assessment.NObeyesdad = "Overweight Type I"
-            goal_type = "giảm cân"
+            goal_type = "Lose weight"
             target_weight = 3  
             duration_weeks = 8  
             advice = ("You are at Overweight Type I. Start by improving your diet and increasing physical activity. Small lifestyle changes can lead to positive results. "
                     f"Your goal is to lose weight. Target weight: {assessment.weight - target_weight} kg, duration: {duration_weeks} weeks.")
         elif predicted_obesity_lv == 6:
             assessment.NObeyesdad = "Overweight Type II"
-            goal_type = "giảm cân"
+            goal_type = "Lose weight"
             target_weight = 7
             duration_weeks = 16  
             advice = ("You are at Overweight Type II. Consider changing your diet and engaging in regular physical activity. Consulting a nutritionist can help you achieve your health goals. "
@@ -315,7 +315,7 @@ class DetailWorkoutView(APIView):
         workout_plan = WorkoutPlan.objects.get(pk=pk)
         serializer = WorkoutPlanSerializer(workout_plan)
         return JsonResponse(serializer.data, safe=False)
-    
+
     def put(self, request, pk):
         workout_plan = WorkoutPlan.objects.get(pk=pk)
         data = JSONParser().parse(request)
@@ -329,4 +329,39 @@ class DetailWorkoutView(APIView):
         workout_plan = WorkoutPlan.objects.get(pk=pk)
         workout_plan.delete()
         return JsonResponse({"message": "Workout plan was deleted successfully!"}, status=204)
+    
+class MealPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        data = JSONParser().parse(request)
+        selected_date = datetime.strptime(data['selected_date'], "%Y-%m-%d").date()
+        goal = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+        start_date = goal.start_date
+        delta_days = (selected_date - start_date).days
+        name_day = "Day " + str(delta_days % 7 + 1)
+        plan = Plan.objects.filter(user_id=request.user.id, goal_id=data['goal_id'], name_day=name_day).first()
+        meal_plans = MealPlan.objects.filter(plan_id=plan.id)
+        serializer = MealPlanSerializer(meal_plans, many=True)
 
+        return JsonResponse(serializer.data, safe=False)
+
+class DetailMealView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        meal_plan = MealPlan.objects.get(pk=pk)
+        serializer = MealPlanSerializer(meal_plan)
+        return JsonResponse(serializer.data, safe=False)
+
+    def put(self, request, pk):
+        meal_plan = MealPlan.objects.get(pk=pk)
+        data = JSONParser().parse(request)
+        serializer = MealPlanSerializer(meal_plan, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+    
+    def delete(self, request, pk):
+        meal_plan = MealPlan.objects.get(pk=pk)
+        meal_plan.delete()
+        return JsonResponse({"message": "Meal plan was deleted successfully!"}, status=204)
