@@ -1,4 +1,5 @@
 from django.utils import timezone
+from datetime import datetime
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -9,9 +10,10 @@ from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt  # Handle POST requests without CSRF token
-from .models import Goal, Assessment, Plan, Meal, Exercise, WorkoutPlan, MealPlan, Progress
-from .serializers import AssessmentSerializer, GoalSerializer
+from .models import Goal, Assessment, Plan, Meal, Exercise, WorkoutPlan, MealPlan, Progress, User
+from .serializers import AssessmentSerializer, GoalSerializer, UserSerializer, PlanSerializer, MealSerializer, ExerciseSerializer, WorkoutPlanSerializer, MealPlanSerializer, ProgressSerializer
 from .utils import generate_plan
+from .plantest import generate_plan_test
 import pickle
 import os
 from dotenv import load_dotenv
@@ -193,18 +195,20 @@ class GeneratePlanAPIView(APIView):
         data = JSONParser().parse(request)
         serializer = GoalSerializer(data=data)
         if serializer.is_valid():
-            if not Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).exists():
+            if not Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type'], target_weight_kg=data['target_weight_kg'], duration_weeks=data['duration_weeks']).exists():
                 serializer.save(user_id=request.user.id)
             print("saved")
             user_data = Assessment.objects.filter(user_id=request.user.id).first()
-            goal_data = Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type']).first()
+            goal_data = Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type'], target_weight_kg=data['target_weight_kg'], duration_weeks=data['duration_weeks']).first()
             print("get ass and goal success")
-            plan = generate_plan(goal_data, user_data)
+            # plan = generate_plan(goal_data, user_data)     
+            plan = generate_plan_test()
             print("generate success")
-            print(plan)
+            # print(plan)
             print(json.dumps(plan, indent=4))
             # self.save_plan_to_db(request.user, goal_data, plan)
-            return JsonResponse(plan, status=201)
+            # return JsonResponse(plan, status=201)
+            return JsonResponse({"goal_id": goal_data.id, "massage": "success"} , status=201)
         return JsonResponse(serializer.errors, status=400)
     
     def save_plan_to_db(self, user, goal, plan):
@@ -272,4 +276,57 @@ class GeneratePlanAPIView(APIView):
                 notes="Initial progress",
                 update_at=timezone.now()
             )
+
+class HomePageView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        data = JSONParser().parse(request)
+        user_data = User.objects.get(id=request.user.id)
+        goal_data = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+        print(goal_data.id)
+        plan_data = Plan.objects.filter(user_id=request.user.id, goal_id=goal_data.id).first()
+        print(plan_data)
+        progress_data = Progress.objects.filter(plan_id=plan_data.id).first()
+        user_serializer = UserSerializer(user_data)
+        goal_serializer = GoalSerializer(goal_data)
+        plan_serializer = PlanSerializer(plan_data)
+        progress_serializer = ProgressSerializer(progress_data)
+        # print(user_data)
+        return JsonResponse({"user": user_serializer.data, "goal": goal_serializer.data, "plan": plan_serializer.data, "progress": progress_serializer.data}, status=200)
+        
+class WorkoutPlanView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        data = JSONParser().parse(request)
+        selected_date = datetime.strptime(data['selected_date'], "%Y-%m-%d").date()
+        goal = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+        start_date = goal.start_date
+        delta_days = (selected_date - start_date).days
+        name_day = "Day " + str(delta_days % 7 + 1)
+        plan = Plan.objects.filter(user_id=request.user.id, goal_id=data['goal_id'], name_day=name_day).first()
+        workout_plans = WorkoutPlan.objects.filter(plan_id=plan.id)
+        serializer = WorkoutPlanSerializer(workout_plans, many=True)
+
+        return JsonResponse(serializer.data, safe=False)
+    
+class DetailWorkoutView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request, pk):
+        workout_plan = WorkoutPlan.objects.get(pk=pk)
+        serializer = WorkoutPlanSerializer(workout_plan)
+        return JsonResponse(serializer.data, safe=False)
+    
+    def put(self, request, pk):
+        workout_plan = WorkoutPlan.objects.get(pk=pk)
+        data = JSONParser().parse(request)
+        serializer = WorkoutPlanSerializer(workout_plan, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data)
+        return JsonResponse(serializer.errors, status=400)
+    
+    def delete(self, request, pk):
+        workout_plan = WorkoutPlan.objects.get(pk=pk)
+        workout_plan.delete()
+        return JsonResponse({"message": "Workout plan was deleted successfully!"}, status=204)
 

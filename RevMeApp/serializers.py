@@ -42,10 +42,6 @@ class MealSerializer(serializers.ModelSerializer):
         model = Meal
         fields = '__all__'
         
-class WorkoutPlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = WorkoutPlan
-        fields = '__all__'
 
 class MealPlanSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,10 +54,13 @@ class ProgressSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class PlanSerializer(serializers.ModelSerializer):
-    workouts = WorkoutPlanSerializer(many=True, read_only=True)
-    meals = MealPlanSerializer(many=True, read_only=True)
-    progress = ProgressSerializer(read_only=True)
-
     class Meta:
         model = Plan
+        fields = '__all__'
+        
+class WorkoutPlanSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer(read_only=True)
+    plan = PlanSerializer(read_only=True)
+    class Meta:
+        model = WorkoutPlan
         fields = '__all__'
