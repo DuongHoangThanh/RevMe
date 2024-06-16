@@ -279,10 +279,9 @@ class GeneratePlanAPIView(APIView):
 
 class HomePageView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        data = JSONParser().parse(request)
+    def get(self, request, goal_id):
         user_data = User.objects.get(id=request.user.id)
-        goal_data = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+        goal_data = Goal.objects.filter(user_id=request.user.id, id=goal_id).first()
         print(goal_data.id)
         plan_data = Plan.objects.filter(user_id=request.user.id, goal_id=goal_data.id).first()
         print(plan_data)
@@ -296,14 +295,13 @@ class HomePageView(APIView):
         
 class WorkoutPlanView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        data = JSONParser().parse(request)
-        selected_date = datetime.strptime(data['selected_date'], "%Y-%m-%d").date()
-        goal = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+    def get(self, request, goal_id, day):
+        selected_date = datetime.strptime(day, "%Y-%m-%d").date()
+        goal = Goal.objects.filter(user_id=request.user.id, id=goal_id).first()
         start_date = goal.start_date
         delta_days = (selected_date - start_date).days
         name_day = "Day " + str(delta_days % 7 + 1)
-        plan = Plan.objects.filter(user_id=request.user.id, goal_id=data['goal_id'], name_day=name_day).first()
+        plan = Plan.objects.filter(user_id=request.user.id, goal_id=goal_id, name_day=name_day).first()
         workout_plans = WorkoutPlan.objects.filter(plan_id=plan.id)
         serializer = WorkoutPlanSerializer(workout_plans, many=True)
 
@@ -332,10 +330,10 @@ class DetailWorkoutView(APIView):
     
 class MealPlanView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
+    def get(self, request, goal_id, day):
         data = JSONParser().parse(request)
-        selected_date = datetime.strptime(data['selected_date'], "%Y-%m-%d").date()
-        goal = Goal.objects.filter(user_id=request.user.id, id=data['goal_id']).first()
+        selected_date = datetime.strptime(day, "%Y-%m-%d").date()
+        goal = Goal.objects.filter(user_id=request.user.id, id=goal_id).first()
         start_date = goal.start_date
         delta_days = (selected_date - start_date).days
         name_day = "Day " + str(delta_days % 7 + 1)
