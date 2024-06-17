@@ -206,10 +206,12 @@ class GeneratePlanAPIView(APIView):
                 print("generate success")
                 # print(plan)
                 print(json.dumps(plan, indent=4))
-                # self.save_plan_to_db(request.user, goal_data, plan)
+                self.save_plan_to_db(request.user, goal_data, plan)
                 # return JsonResponse(plan, status=201)
                 return JsonResponse({"goal_id": goal_data.id, "massage": "success"} , status=201)
-            else: return JsonResponse({"goal_id": goal_data.id, "massage": "success"} , status=201)
+            else: 
+                goal_data = Goal.objects.filter(user_id=request.user.id, goal_type=data['goal_type'], target_weight_kg=data['target_weight_kg'], duration_weeks=data['duration_weeks']).first()
+                return JsonResponse({"goal_id": goal_data.id, "massage": "success"} , status=201)
         return JsonResponse(serializer.errors, status=400)
     
     def save_plan_to_db(self, user, goal, plan):
@@ -332,13 +334,12 @@ class DetailWorkoutView(APIView):
 class MealPlanView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self, request, goal_id, day):
-        data = JSONParser().parse(request)
         selected_date = datetime.strptime(day, "%Y-%m-%d").date()
         goal = Goal.objects.filter(user_id=request.user.id, id=goal_id).first()
         start_date = goal.start_date
         delta_days = (selected_date - start_date).days
         name_day = "Day " + str(delta_days % 7 + 1)
-        plan = Plan.objects.filter(user_id=request.user.id, goal_id=data['goal_id'], name_day=name_day).first()
+        plan = Plan.objects.filter(user_id=request.user.id, goal_id=goal_id, name_day=name_day).first()
         meal_plans = MealPlan.objects.filter(plan_id=plan.id)
         serializer = MealPlanSerializer(meal_plans, many=True)
 
